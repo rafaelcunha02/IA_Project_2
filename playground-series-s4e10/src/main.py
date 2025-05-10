@@ -14,12 +14,6 @@ from sklearn.impute import SimpleImputer
 from sklearn.model_selection import train_test_split, GridSearchCV, learning_curve
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, classification_report, roc_curve, auc
 import time
-import warnings
-
-# Suppress convergence warnings
-warnings.filterwarnings("ignore", category=UserWarning)
-warnings.filterwarnings("ignore", category=FutureWarning)
-warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 # Models
 from sklearn.tree import DecisionTreeClassifier
