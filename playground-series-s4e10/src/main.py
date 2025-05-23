@@ -13,6 +13,8 @@ from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 from sklearn.model_selection import train_test_split, GridSearchCV, learning_curve
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, classification_report, roc_curve, auc
+from imblearn.over_sampling import SMOTE
+from imblearn.pipeline import Pipeline  # Não use sklearn.pipeline.Pipeline aqui
 import time
 
 # Models
@@ -148,6 +150,26 @@ X_train_split, X_val, y_train_split, y_val = train_test_split(
     X_train, y_train, test_size=0.2, random_state=42, stratify=y_train
 )
 
+print("\n--- Verificação do SMOTE ---")
+
+# Aplica o pré-processador ao treino
+X_train_preprocessed = preprocessor.fit_transform(X_train_split)
+
+# Aplica SMOTE ao treino já processado
+smote = SMOTE(random_state=42)
+X_resampled, y_resampled = smote.fit_resample(X_train_preprocessed, y_train_split)
+
+# Mostrar tamanhos antes e depois
+print(f"Tamanho antes do SMOTE: {X_train_preprocessed.shape}")
+print(f"Tamanho depois do SMOTE: {X_resampled.shape}")
+
+# Mostrar distribuição de classes antes e depois
+print("Distribuição original:")
+print(y_train_split.value_counts())
+
+print("Distribuição após SMOTE:")
+print(pd.Series(y_resampled).value_counts())
+
 # Function to evaluate model performance
 def evaluate_model(model, X_train, y_train, X_val, y_val, model_name):
     # Training time
@@ -253,28 +275,33 @@ def evaluate_model(model, X_train, y_train, X_val, y_val, model_name):
 
 # Define models to evaluate
 models = {
-    'Decision Tree': Pipeline([
+    'Decision Tree': Pipeline(steps=[
         ('preprocessor', preprocessor),
+        ('smote', SMOTE(random_state=42)),
         ('classifier', DecisionTreeClassifier(random_state=42))
     ]),
     
-    'Random Forest': Pipeline([
+    'Random Forest': Pipeline(steps=[
         ('preprocessor', preprocessor),
+        ('smote', SMOTE(random_state=42)),
         ('classifier', RandomForestClassifier(random_state=42))
     ]),
     
-    'Neural Network': Pipeline([
+    'Neural Network': Pipeline(steps=[
         ('preprocessor', preprocessor),
+        ('smote', SMOTE(random_state=42)),
         ('classifier', MLPClassifier(random_state=42, max_iter=1000))
     ]),
     
-    'SVM': Pipeline([
+    'SVM': Pipeline(steps=[
         ('preprocessor', preprocessor),
+        ('smote', SMOTE(random_state=42)),
         ('classifier', SVC(random_state=42, probability=True))
     ]),
     
-    'K-Nearest Neighbors': Pipeline([
+    'K-Nearest Neighbors': Pipeline(steps=[
         ('preprocessor', preprocessor),
+        ('smote', SMOTE(random_state=42)),
         ('classifier', KNeighborsClassifier())
     ])
 }
@@ -324,7 +351,8 @@ print(f"\nBest performing model: {best_model_name}")
 # Define parameter grid for the best model
 if best_model_name == 'Decision Tree':
     param_grid = {
-        'classifier__max_depth': [5, 10, 15, 20, None],
+        'classifier__n_estimators': [50, 100, 200],
+        'classifier__max_depth': [10, 20, 30, None],
         'classifier__min_samples_split': [2, 5, 10],
         'classifier__min_samples_leaf': [1, 2, 4]
     }
@@ -364,7 +392,7 @@ grid_search = GridSearchCV(
     verbose=1
 )
 
-grid_search.fit(X_train, y_train)
+grid_search.fit(X_train_split, y_train_split)
 
 print(f"\nBest parameters: {grid_search.best_params_}")
 print(f"Best cross-validation score: {grid_search.best_score_:.4f}")
